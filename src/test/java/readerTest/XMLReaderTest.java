@@ -6,13 +6,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import org.junit.Test;
-import reader.JSONReader;
+import reader.XMLReader;
 
-public class JSONReaderTest {
+public class XMLReaderTest {
 
   @Test
   public void testBuild() throws IOException {
-
     BufferedReader fileReader =
         new BufferedReader(new FileReader(new File("./testdata/result.html")));
     StringBuilder sb = new StringBuilder();
@@ -24,7 +23,7 @@ public class JSONReaderTest {
     }
     fileReader.close();
 
-    JSONReader reader = new JSONReader(new File("./testdata/book.json"));
+    XMLReader reader = new XMLReader(new File("./testdata/book.xml"));
     // System.out.println(reader.build());
     assertEquals(sb.toString(), reader.build());
   }
