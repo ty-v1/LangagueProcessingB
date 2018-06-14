@@ -14,7 +14,7 @@ public class Book {
     name = _name;
     year = _year;
   }
-  
+
   void setYear(int _year) {
     year = _year;
   }
@@ -22,11 +22,11 @@ public class Book {
   void setName(String _name) {
     name = _name;
   }
-  
-  public int getYear(){
+
+  public int getYear() {
     return year;
   }
-  
+
   public String build() {
     Builder htmlBuilder = new Builder();
     htmlBuilder.h2(String.format("%s(%d年)", name, year));
