@@ -1,15 +1,15 @@
 package reader;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 import data.Book;
 
 public class XMLReader extends AbstractReader {
@@ -23,78 +23,36 @@ public class XMLReader extends AbstractReader {
   @Override
   protected void readFile(File data) throws IOException {
 
-    XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-
-    // XML を解析する
+    SAXParserFactory spfactory = SAXParserFactory.newInstance();
     try {
-      final XMLStreamReader streamReader =
-          xmlInputFactory.createXMLStreamReader(new FileReader(data));
-
-      log.info("start analyzing " + data.getName());
-      while (streamReader.hasNext()) {
-        publishEvent(streamReader);
-
-        if (streamReader.hasNext())
-          streamReader.next();
-      }
-      streamReader.close();
-
-    } catch (FileNotFoundException | XMLStreamException e) {
+      SAXParser parser = spfactory.newSAXParser();
+      parser.parse(data, new BookVisitor());
+    } catch (ParserConfigurationException | SAXException e) {
       e.printStackTrace();
     }
   }
 
-  private void publishEvent(XMLStreamReader streamReader) throws XMLStreamException {
-    log.info("publishEvent(XMLStreamReader) called");
+  private class BookVisitor extends DefaultHandler{
 
-    switch (streamReader.getEventType()) {
-      case XMLStreamConstants.START_ELEMENT:
-        log.info("publish tag started");
+    private String name;
+    private int year;
+    private boolean isBookElement = false;
 
-        if (!streamReader.hasNext()) {
-          log.info("publish tag has not book tag");
-          return;
-        }
-        streamReader.next();
-        bookEvent(streamReader);
-        break;
-      case XMLStreamConstants.END_ELEMENT:
-        log.info("publish tag ended");
-        return;
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+      isBookElement = (qName.equals("book"));
+      year = (isBookElement)? Integer.parseInt(attributes.getValue("year")) : -1;
     }
-  }
 
-  private void bookEvent(XMLStreamReader streamReader) throws XMLStreamException {
-    log.info("bookEvent(XMLStreamReader) called");
+    @Override
+    public void characters(char[] ch, int offset, int length) {
+      name = (isBookElement)? new String(ch, offset, length) : null;
+    }
 
-    while (streamReader.hasNext()) {
-
-      switch (streamReader.getEventType()) {
-        case XMLStreamConstants.START_ELEMENT:
-          log.info("book tag started");
-          log.info("attribute " + streamReader.getAttributeValue(0) + " loaded");
-          int year = Integer.parseInt(streamReader.getAttributeValue(0));
-
-          String name = streamReader.getElementText();
-          log.info("element text " + name + " loaded");
-
-          log.info("book instance created");
-          log.info("books size : " + books.size());
-
-          books.add(new Book(name, year));
-          break;
-        case XMLStreamConstants.END_ELEMENT:
-          log.info("book tag ended");
-          break;
-        case XMLStreamConstants.CDATA:
-        case XMLStreamConstants.COMMENT:
-        case XMLStreamConstants.ENTITY_REFERENCE:
-        case XMLStreamConstants.CHARACTERS:
-          name = streamReader.getText();
-          log.info("text : " + name);
-          break;
-      }
-      streamReader.next();
+    //End Element
+    public void endElement(String uri, String localName, String qName) {
+      if(qName.equals("book"))
+        books.add(new Book(name, year));
     }
   }
 }
